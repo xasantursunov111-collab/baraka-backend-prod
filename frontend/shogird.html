@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ustoz va Shogird — BARAKA</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="/" class="nav-logo"><div class="logo-icon">ب</div> BARAKA</a>
+            <ul class="nav-links" id="navLinks"></ul>
+        <div class="nav-hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')">
+            <span></span><span></span><span></span>
+        </div>
+        </div>
+    </nav>
+    <div class="container section">
+        <h1 style="color:var(--brown-900); margin-bottom:8px;">🤝 Ustoz va Shogirdlar</h1>
+        <p style="color:var(--text-secondary); margin-bottom: 24px;">Jamoa nazorati va avlodlar estafetasi.</p>
+
+        <div id="shogirdDashboard" style="padding:24px; background:white; border-radius:16px; box-shadow:var(--shadow-sm);">
+            Yuklanmoqda...
+        </div>
+    </div>
+    
+    <script src="/static/js/app.js?v=3"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const dash = document.getElementById('shogirdDashboard');
+            const user = getAuthUser();
+            if(!user) return dash.innerHTML = "Tizimdan foydalanish uchun kiring.";
+            
+            try {
+                const data = await api.getJamoaDashboard();
+                if(user.role === 'USTA') {
+                    if(!data.shogirdlar || data.shogirdlar.length===0){
+                        dash.innerHTML = "Jamoangizda hali shogirdlar yo'q.";
+                        return;
+                    }
+                    let html = `<h3 style="margin-bottom:16px;">Jamoangiz shogirdlari</h3><div style="display:flex; flex-direction:column; gap:16px;">`;
+                    data.shogirdlar.forEach(s => {
+                        html += `<div style="padding:16px; border:1px solid #e2e8f0; border-radius:8px;">
+                                    <strong>${s.full_name}</strong> - Halol Reyting: ${s.halol_rating}
+                                 </div>`;
+                    });
+                    dash.innerHTML = html + "</div>";
+                } else if(user.role === 'SHOGIRD') {
+                    dash.innerHTML = `Sizning ustozi ID: ${data.ustoz_id || 'Biriktirilmagan'}`;
+                } else {
+                    dash.innerHTML = "Ushbu sahifa Usta va Shogirdlar uchun yopiq jamoa oynasidir.";
+                }
+            } catch(e) {
+                dash.innerHTML = "Xatolik ro'y berdi.";
+            }
+        });
+    </script>
+</body>
+</html>
