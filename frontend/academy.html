@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Akademiya — BARAKA</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .course-card { display: flex; flex-direction: column; height: 100%; transition: transform 0.2s; }
+        .course-card:hover { transform: translateY(-4px); }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="/" class="nav-logo"><div class="logo-icon">ب</div> BARAKA</a>
+            <ul class="nav-links" id="navLinks"></ul>
+        <div class="nav-hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')">
+            <span></span><span></span><span></span>
+        </div>
+        </div>
+    </nav>
+    <div class="container section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+            <h1 style="color:var(--brown-900);">🎓 Hunarmandlar Akademiyasi</h1>
+            <button class="btn btn-primary" id="addCourseBtn" style="display:none;" onclick="alert('Yangi kurs qo\\'shish')">+ Yangi Kurs</button>
+        </div>
+        <p style="color:var(--text-secondary); margin-bottom: 24px;">Ustozlar tomonidan tayyorlangan onlayn kasb-hunar darslari.</p>
+
+        <div id="coursesGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:24px;">
+            <div style="grid-column:1/-1;">Yuklanmoqda...</div>
+        </div>
+    </div>
+    
+    <script src="/static/js/app.js?v=3"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = getAuthUser();
+            if(user && user.role === 'USTA') {
+                document.getElementById('addCourseBtn').style.display = 'block';
+            }
+            const grid = document.getElementById('coursesGrid');
+            try {
+                const res = await api.getCourses();
+                if(!res || res.length === 0){
+                    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;">Hali kurslar qo'shilmagan.</div>`;
+                    return;
+                }
+                grid.innerHTML = res.map(c => `
+                    <div class="card course-card">
+                        <div style="height:160px; background:var(--gray-200); border-radius:8px; margin-bottom:16px;"></div>
+                        <h3 style="font-size:1.2rem; margin-bottom:8px;">${c.title}</h3>
+                        <p style="color:var(--text-secondary); font-size:0.9rem; margin-bottom:16px; flex:1;">${c.description}</p>
+                        <div style="font-weight:bold; color:var(--text-color); margin-bottom:8px;">Ustoz ID: ${c.author_id}</div>
+                        <button class="btn btn-outline" style="width:100%;">Darsni boshlash ▶️</button>
+                    </div>
+                `).join('');
+            } catch(e) { grid.innerHTML = `<div style="grid-column:1/-1;color:red;">Yuklashda xatolik.</div>`; }
+        });
+    </script>
+</body>
+</html>
