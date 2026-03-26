@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BARAKA - Usta va Mijoz Ishonchi</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="/" class="nav-logo"><div class="logo-icon">ب</div> BARAKA</a>
+            <ul class="nav-links" id="navLinks"></ul>
+            <div class="nav-hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="container">
+            <div class="hero-badge">🌿 Hunarmandchilik an'analari raqamiy dunyoda</div>
+            <h1>Usta qo'llariga<br><span>Baraka</span> tilaymiz</h1>
+            <p>Usta va mijoz o'rtasida ishonch, halollik va milliy hunarmandchilik qadriyatlarini saqlab qoluvchi yagona platforma</p>
+
+            <!-- Smart Search Panel -->
+            <div style="max-width:600px; margin:32px auto 0; background:white; padding:8px 8px 8px 24px; border-radius:32px; display:flex; gap:8px; align-items:center; box-shadow:0 10px 30px rgba(0,0,0,0.1);">
+                <div style="font-size:1.5rem;">🤖</div>
+                <input type="text" id="smartSearchInput" class="form-input" style="border:none; box-shadow:none; flex:1; padding:12px; font-size:1rem;" placeholder="Masalan: Uyimga mebel kerak..." onkeypress="if(event.key === 'Enter') doSmartSearch()">
+                <button id="voiceBtn" class="btn btn-outline" style="border-radius:50%; width:44px; height:44px; padding:0; display:flex; align-items:center; justify-content:center; border:none; background:#f1f5f9; cursor:pointer; font-size:1.2rem;" onclick="toggleVoice()" title="Ovozli yozish/to'xtatish">🎤</button>
+                <button class="btn btn-primary" style="border-radius:24px; padding:12px 24px;" onclick="doSmartSearch()">Tafakkur 🔍</button>
+            </div>
+            <div id="smartSearchResults" style="max-width:700px; margin:24px auto 0; display:none; text-align:left; background:white; padding:16px; border-radius:16px; box-shadow:0 5px 20px rgba(0,0,0,0.05); max-height:400px; overflow-y:auto;">
+            </div>
+
+            <div class="hero-buttons" id="heroButtons" style="margin-top:24px;">
+                <a href="/masters" class="btn btn-primary">Barcha Ustalar</a>
+                <a href="/login#register" class="btn btn-secondary" id="regHeroBtn">Ro'yxatdan o'tish</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" style="background:var(--gray-50); padding: 80px 0;">
+        <div class="container">
+            <h2 style="text-align:center; font-size:2rem; color:var(--brown-900); margin-bottom:40px;">Nega aynan BARAKA?</h2>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:32px;">
+                <div class="card" style="text-align:center; padding:32px;">
+                    <div style="font-size:3rem; margin-bottom:16px;">🛡️</div>
+                    <h3 style="margin-bottom:12px; color:var(--brown-800);">Halollik va Ishonch</h3>
+                    <p style="color:var(--text-secondary);">Har bir usta hamjamiyat nazoratida bo'ladi va shaffof baholanadi. Aldovlarsiz tizim.</p>
+                </div>
+                <div class="card" style="text-align:center; padding:32px;">
+                    <div style="font-size:3rem; margin-bottom:16px;">⚡</div>
+                    <h3 style="margin-bottom:12px; color:var(--brown-800);">Sun'iy intellekt</h3>
+                    <p style="color:var(--text-secondary);">"Hasan" orqali eng murakkab muammolaringizga to'g'ri maslahat va o'z ishi ustalarini topasiz.</p>
+                </div>
+                <div class="card" style="text-align:center; padding:32px;">
+                    <div style="font-size:3rem; margin-bottom:16px;">🤝</div>
+                    <h3 style="margin-bottom:12px; color:var(--brown-800);">Ustoz va Shogird</h3>
+                    <p style="color:var(--text-secondary);">Ming yillik hunarmandchilik qadriyatlarini raqamli akademiya orqali kelajak avlodga yetkazamiz.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" style="padding: 80px 0;">
+        <div class="container" style="text-align:center;">
+            <h2 style="font-size:2rem; color:var(--brown-900); margin-bottom:24px;">Xizmatingizga tayyormiz</h2>
+            <p style="color:var(--text-secondary); max-width:600px; margin:0 auto 32px;">O'nlab yo'nalishlar bo'yicha eng sara va halol ustalarning xizmatlaridan foydalaning. Hozirning o'zida ro'yxatdan o'ting!</p>
+            <a href="/login#register" class="btn btn-primary" style="font-size:1.1rem; padding:16px 32px; border-radius:32px;">Bepul ro'yxatdan o'tish</a>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">© 2026 BARAKA. Barcha huquqlar himoyalangan.</div>
+        </div>
+    </footer>
+
+    <script src="/static/js/app.js?v=4"></script>
+    <script>
+    let recognition;
+    let isVoiceMode = false;
+    let isThinking = false;
+    let chatHistory = [];
+
+    function initHeroButtons() {
+        const user = getAuthUser();
+        const bx = document.getElementById('heroButtons');
+        if(user) {
+            if(user.role === 'USTA') {
+                bx.innerHTML = `<a href="/profile?id=${user.id}" class="btn btn-primary">Mening Profilim</a> <a href="/orders" class="btn btn-secondary">Buyurtmalar</a>`;
+            } else if(user.role === 'MIJOZ') {
+                bx.innerHTML = `<a href="/masters" class="btn btn-primary">🔍 Usta topish</a> <a href="/orders" class="btn btn-secondary">📋 Buyurtmalarim</a>`;
+            } else {
+                bx.innerHTML = `<a href="/dashboard" class="btn btn-primary">Dashboard</a>`;
+            }
+        } else {
+            bx.innerHTML = `
+                <a href="/masters" class="btn btn-primary">Barcha Ustalar</a>
+                <a href="/academy" class="btn btn-secondary">Akademiya</a>
+                <a href="/market" class="btn btn-outline" style="background:white; margin-left:8px;">Bozor</a>
+            `;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initHeroButtons();
+    });
+
+    function toggleVoice() {
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRec) {
+            showToast("Brauzeringiz ovozli qidiruvni qo'llab-quvvatlamaydi.", 'error');
+            return;
+        }
+        if (window.isSecureContext === false) {
+            showToast("Xavfsizlik qoidasi: Mikrofon faqat HTTPS (yoki localhost) ulanishda ishlaydi!", "error");
+            return;
+        }
+        const btn = document.getElementById('voiceBtn');
+        if (!recognition) {
+            recognition = new SpeechRec();
+            recognition.lang = 'uz-UZ';
+            recognition.interimResults = false;
+            recognition.continuous = true;
+
+            recognition.onstart = function() {
+                btn.innerHTML = '🔴';
+                btn.classList.add('recording');
+                document.getElementById('smartSearchInput').placeholder = "Hasanga gapiring...";
+            };
+
+            recognition.onresult = function(event) {
+                if (isThinking) return;
+                const text = event.results[event.results.length - 1][0].transcript;
+                document.getElementById('smartSearchInput').value = text;
+                doSmartSearch(true);
+            };
+
+            recognition.onerror = function(event) {
+                console.error(event.error);
+                isVoiceMode = false;
+                btn.innerHTML = '🎤';
+                btn.classList.remove('recording');
+            };
+
+            recognition.onend = function() {
+                if (isVoiceMode && !isThinking) {
+                    recognition.start();
+                } else if (!isVoiceMode) {
+                    btn.innerHTML = '🎤';
+                    btn.classList.remove('recording');
+                    document.getElementById('smartSearchInput').placeholder = "Masalan: Uyimga mebel kerak...";
+                }
+            };
+        }
+
+        if (isVoiceMode) {
+            isVoiceMode = false;
+            recognition.stop();
+        } else {
+            isVoiceMode = true;
+            recognition.start();
+        }
+    }
+
+    async function doSmartSearch(isVoice = false) {
+        const q = document.getElementById('smartSearchInput').value.trim();
+        if(!q) return;
+
+        const resultsDiv = document.getElementById('smartSearchResults');
+        resultsDiv.style.display = 'block';
+        
+        if (!isVoice) {
+            resultsDiv.innerHTML += `<div style="text-align:right; margin:10px 0;"><span style="background:var(--brown-600); color:white; padding:10px 16px; border-radius:16px 16px 0 16px; display:inline-block; max-width:80%;">${q}</span></div>`;
+            resultsDiv.innerHTML += `<div id="aiTyping" style="text-align:left; margin:10px 0; color:var(--text-secondary);">Hasan yozmoqda...</div>`;
+        } else {
+            resultsDiv.innerHTML = `<div style="text-align:center; padding:20px; color:var(--brown-800);"><span class="spin" style="font-size:2.5rem;">⚙️</span><br>Hasan o'ylanyapti...</div>`;
+            isThinking = true;
+            if(recognition && isVoiceMode) recognition.stop();
+        }
+        
+        document.getElementById('smartSearchInput').value = '';
+        
+        try {
+            const res = await api.aiChat(chatHistory, q);
+            chatHistory.push({role: "user", text: q});
+            
+            let aiText = res.answer || res.tip || "Kechirasiz, tushunmadim.";
+            chatHistory.push({role: "model", text: aiText});
+            
+            const typing = document.getElementById('aiTyping');
+            if(typing) typing.remove();
+            
+            if (!isVoice) {
+                resultsDiv.innerHTML += `<div style="text-align:left; margin:10px 0;"><span style="background:var(--gray-200); color:var(--text-color); padding:10px 16px; border-radius:16px 16px 16px 0; display:inline-block; max-width:80%; line-height:1.5;">${aiText}</span></div>`;
+                renderData(res);
+            } else {
+                resultsDiv.innerHTML = `<div style="text-align:center; padding:20px; color:var(--brown-800);"><span style="font-size:2.5rem;">🔊</span><br>Hasan gapiryapti...</div>`;
+                playAIResponse(aiText);
+                renderData(res);
+            }
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        } catch(e) {
+            console.log(e);
+            if(isVoice) isThinking = false;
+            const typing = document.getElementById('aiTyping');
+            if(typing) typing.remove();
+            resultsDiv.innerHTML += `<div style="text-align:center; color:red;">Kechirasiz, serverda tarmoq xatosi.</div>`;
+        }
+    }
+
+    function renderData(res) {
+        const resultsDiv = document.getElementById('smartSearchResults');
+        if (res.masters && res.masters.length > 0) {
+            let h = `<div style="margin-top:16px;"><strong>Ustalar:</strong><div style="display:flex; gap:8px; overflow-x:auto; padding-top:8px; padding-bottom:8px;">`;
+            res.masters.forEach(m => {
+                h += `<a href="/profile?id=${m.id}" class="card" style="min-width:200px; text-decoration:none; color:inherit; padding:12px; margin:0;">
+                    <div style="font-weight:600;">🧑‍🔧 ${m.name}</div>
+                    <div style="font-size:0.8rem; color:var(--gold-600);">⭐ ${m.rating} Reyting</div>
+                </a>`;
+            });
+            h += `</div></div>`;
+            resultsDiv.innerHTML += h;
+        }
+        if (res.products && res.products.length > 0) {
+            let h = `<div style="margin-top:16px;"><strong>Mahsulotlar:</strong><div style="display:flex; gap:8px; overflow-x:auto; padding-top:8px; padding-bottom:8px;">`;
+            res.products.forEach(p => {
+                h += `<div class="card" style="min-width:180px; padding:12px; margin:0;">
+                    <div style="font-weight:600;">🛒 ${p.name}</div>
+                    <div style="font-size:0.8rem; color:var(--green-600);">${p.price}</div>
+                </div>`;
+            });
+            h += `</div></div>`;
+            resultsDiv.innerHTML += h;
+        }
+    }
+
+    function playAIResponse(text) {
+        if(!text) {
+            isThinking = false;
+            if(isVoiceMode && recognition) recognition.start();
+            return;
+        }
+        
+        const maxLen = 3000;
+        if(text.length > maxLen) text = text.substring(0, maxLen);
+        
+        text = text.replace(/0 ta/g, "ohta").replace(/0/g, "nol").replace(/\*/g, "");
+        
+        const encoded = encodeURIComponent(text);
+        const au = new Audio(`/api/v1/tts?text=${encoded}&voice=uz-UZ-SardorNeural`);
+        
+        au.onplay = () => { isThinking = true; };
+        au.onended = () => {
+            isThinking = false;
+            document.getElementById('smartSearchResults').innerHTML = '';
+            if(isVoiceMode && recognition) recognition.start();
+        };
+        au.onerror = () => {
+            isThinking = false;
+            if(isVoiceMode && recognition) recognition.start();
+        };
+        au.play().catch(e => {
+            console.error(e);
+            isThinking = false;
+            if(isVoiceMode && recognition) recognition.start();
+        });
+    }
+    </script>
+</body>
+</html>
