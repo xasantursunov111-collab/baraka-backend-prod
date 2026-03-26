@@ -1,0 +1,17 @@
+{
+  "name": "BARAKA Hunarmandlar",
+  "short_name": "BARAKA",
+  "description": "Usta va mijoz o'rtasida ishonch, halollik va milliy hunarmandchilik qadriyatlarini saqlab qoluvchi platforma.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8f5f0",
+  "theme_color": "#2a5934",
+  "icons": [
+    {
+      "src": "/static/img/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
