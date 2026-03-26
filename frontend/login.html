@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kirish va Ro'yxatdan o'tish — BARAKA</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .auth-container { max-width: 400px; margin: 40px auto; }
+        .tab-btn { flex:1; text-align:center; padding:12px; cursor:pointer; background:var(--gray-200); font-weight:600; }
+        .tab-btn.active { background:var(--brown-600); color:white; }
+        .auth-form { display: none; padding:24px; background:white; border-radius:0 0 var(--radius-md) var(--radius-md); box-shadow:var(--shadow-sm); }
+        .auth-form.active { display: block; }
+        .password-wrapper { position: relative; }
+        .password-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--gray-500); z-index: 10; font-size: 1.2rem; }
+        .password-toggle:hover { color: var(--brown-600); }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="/" class="nav-logo"><div class="logo-icon">ب</div> BARAKA</a>
+            <ul class="nav-links" id="navLinks"></ul>
+        <div class="nav-hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')">
+            <span></span><span></span><span></span>
+        </div>
+        </div>
+    </nav>
+
+    <div class="auth-page">
+        <div class="auth-card">
+            <h1>Tizimga kirish</h1>
+            <p class="subtitle">Platformaga xush kelibsiz</p>
+
+            <div class="auth-tabs">
+                <button class="auth-tab active" id="tabLogin" onclick="switchTab('login')">Kirish</button>
+                <button class="auth-tab" id="tabReg" onclick="switchTab('register')">Ro'yxatdan o'tish</button>
+            </div>
+
+            <form id="loginForm" class="auth-form active" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label class="form-label">Telefon raqam</label>
+                    <input type="text" name="phone" placeholder="+998901234567" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Parol</label>
+                    <div class="password-wrapper">
+                        <input type="password" name="password" id="loginPassword" class="form-input" required>
+                        <span class="password-toggle" onclick="togglePassword('loginPassword', this)">👁️</span>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Tizimga kirish</button>
+            </form>
+
+            <form id="registerForm" class="auth-form" onsubmit="handleRegister(event)" style="display:none;">
+                <div class="form-group">
+                    <label class="form-label">To'liq ismingiz</label>
+                    <input type="text" name="full_name" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Telefon raqam (+998901234567)</label>
+                    <input type="text" name="phone" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Kim sifatida kiryapsiz?</label>
+                    <div class="role-selector">
+                        <div class="role-option active" onclick="setRole('MIJOZ')">Mijoz</div>
+                        <div class="role-option" onclick="setRole('USTA')">Usta</div>
+                        <div class="role-option" onclick="setRole('DOKONDOR')">Do'kondor</div>
+                    </div>
+                    <input type="hidden" name="role" id="roleInput" value="MIJOZ">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Parol</label>
+                    <div class="password-wrapper">
+                        <input type="password" name="password" id="regPassword" class="form-input" required>
+                        <span class="password-toggle" onclick="togglePassword('regPassword', this)">👁️</span>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Ro'yxatdan o'tish</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js?v=3"></script>
+    <script>
+        function switchTab(t) {
+            document.getElementById('tabLogin').classList.remove('active');
+            document.getElementById('tabReg').classList.remove('active');
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('registerForm').style.display = 'none';
+            
+            if(t === 'login'){
+                document.getElementById('tabLogin').classList.add('active');
+                document.getElementById('loginForm').style.display = 'block';
+            } else {
+                document.getElementById('tabReg').classList.add('active');
+                document.getElementById('registerForm').style.display = 'block';
+            }
+        }
+        
+        if(window.location.hash === '#register') switchTab('register');
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const phone = e.target.phone.value;
+            const password = e.target.password.value;
+            try {
+                const res = await api.login(phone, password);
+                localStorage.setItem('baraka_token', res.access_token);
+                localStorage.setItem('baraka_user', JSON.stringify(res.user));
+                window.location.href = '/';
+            } catch (err) {
+                showToast(err.message || "Tizimga kirishda xatolik", "error");
+            }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const data = {
+                full_name: e.target.full_name.value,
+                phone: e.target.phone.value,
+                password: e.target.password.value,
+                role: e.target.role.value
+            };
+            try {
+                const user = await api.createUser(data);
+                showToast("Ro'yxatdan muvaffaqiyatli o'tdingiz. Tizimga kiring.");
+                switchTab('login');
+                document.getElementById('loginForm').phone.value = data.phone;
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        }
+        function setRole(role) {
+            document.querySelectorAll('.role-option').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('roleInput').value = role;
+        }
+
+        function togglePassword(id, el) {
+            const input = document.getElementById(id);
+            if (input.type === 'password') {
+                input.type = 'text';
+                el.innerText = '🙈';
+            } else {
+                input.type = 'password';
+                el.innerText = '👁️';
+            }
+        }
+    </script>
+</body>
+</html>
