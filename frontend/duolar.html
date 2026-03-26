@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duolar Kitobi — BARAKA</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="/" class="nav-logo"><div class="logo-icon">ب</div> BARAKA</a>
+            <ul class="nav-links" id="navLinks"></ul>
+        <div class="nav-hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')">
+            <span></span><span></span><span></span>
+        </div>
+        </div>
+    </nav>
+    <div class="container section">
+        <h1 style="color:var(--brown-900); margin-bottom:8px;">📖 Ochiq Duolar Kitobi</h1>
+        <p style="color:var(--text-secondary); margin-bottom: 24px;">Xalqimiz tomonidan xalol ustalarga bildirilgan ishonch va minnatdorchilik namunalari.</p>
+
+        <div id="duolarList" style="display:flex; flex-direction:column; gap:16px;">
+            Yuklanmoqda...
+        </div>
+    </div>
+    
+    <script src="/static/js/app.js?v=3"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const list = document.getElementById('duolarList');
+            try {
+                const res = await api.getDuolarGlobal();
+                if(!res || res.length === 0){
+                    list.innerHTML = "Tizimda hozircha duolar kiritilmagan."; return;
+                }
+                list.innerHTML = res.map(d => `
+                    <div class="card" style="display:flex; align-items:flex-start; gap:16px;">
+                        <div style="font-size:2rem;">🤲</div>
+                        <div>
+                            <p style="font-size:1.1rem; line-height:1.6; margin-bottom:8px;">${d.text}</p>
+                            <span style="font-size:0.85rem; color:var(--text-secondary);">Muallif ID: ${d.author_id} • Olgan shaxs ID: ${d.target_user_id}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch(e) { list.innerHTML = "Xatolik ro'y berdi."; }
+        });
+    </script>
+</body>
+</html>
