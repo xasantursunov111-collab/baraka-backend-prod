@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Do'konlar va Materiallar — BARAKA</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="/" class="nav-logo"><div class="logo-icon">ب</div> BARAKA</a>
+            <ul class="nav-links" id="navLinks"></ul>
+        <div class="nav-hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')">
+            <span></span><span></span><span></span>
+        </div>
+        </div>
+    </nav>
+    <div class="container section">
+        <h1 style="color:var(--brown-900); margin-bottom:8px;">🛒 Ta'minotchi Do'konlar</h1>
+        <p style="color:var(--text-secondary); margin-bottom: 24px;">Xom ashyo, materiklar va furnituralarni xarid qiling.</p>
+        
+        <div style="display:flex; gap:12px; margin-bottom:24px; flex-wrap:wrap;">
+            <input type="text" id="searchQ" class="form-input" style="flex:1" placeholder="Mahsulot yoki do'kon qidiruv">
+            <button class="btn btn-primary" onclick="loadSuppliers()">Izlash 🔍</button>
+        </div>
+
+        <div id="suppliersList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap:24px;">
+            <div style="grid-column:1/-1;">Yuklanmoqda...</div>
+        </div>
+    </div>
+    
+    <script src="/static/js/app.js?v=3"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', loadSuppliers);
+        async function loadSuppliers() {
+            const list = document.getElementById('suppliersList');
+            const q = document.getElementById('searchQ').value.trim();
+            try {
+                // api.getSupplierFeed depends on the actual backend route, we'll try a generic fetch
+                const res = await fetch(`/api/v1/suppliers/feed${q ? '?search='+encodeURIComponent(q) : ''}`).then(r=>r.json());
+                if (!res || res.length === 0) {
+                    list.innerHTML = `<div style="grid-column:1/-1;text-align:center;">Topilmadi.</div>`; return;
+                }
+                list.innerHTML = res.map(p => `
+                    <div class="card">
+                        <img src="${p.image_url || ''}" style="width:100%; height:150px; object-fit:cover; border-radius:8px; background:var(--gray-200); margin-bottom:12px;">
+                        <h3 style="font-size:1.1rem; margin-bottom:4px;">${p.name}</h3>
+                        <div style="font-size:0.9rem; color:var(--text-secondary); margin-bottom:8px;">📍 ${p.shop_address || 'Kiritilmagan'}</div>
+                        <div style="font-weight:bold; color:var(--green-600); font-size:1.2rem; margin-bottom:12px;">${p.price}</div>
+                        <button class="btn btn-outline" style="width:100%;" onclick="alert('Tez kunda sotib olish funksiyasi qo\\'shiladi')">🛒 Savatga qo'shish</button>
+                    </div>
+                `).join('');
+            } catch(e) {
+                list.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:red;">Xato yuz berdi.</div>`;
+            }
+        }
+    </script>
+</body>
+</html>
