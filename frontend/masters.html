@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ustalar - BARAKA</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .masters-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; padding: 24px 0; }
+        .master-card { display: flex; flex-direction: column; height: 100%; transition: transform 0.2s; }
+        .master-card:hover { transform: translateY(-4px); }
+        .mc-header { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
+        .mc-avatar { width: 64px; height: 64px; border-radius: 50%; background: var(--gray-200); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; overflow: hidden; }
+        .mc-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .filter-bar { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; background:var(--gray-50); padding:16px; border-radius:12px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="/" class="nav-logo"><div class="logo-icon">ب</div> BARAKA</a>
+            <ul class="nav-links" id="navLinks"></ul>
+        <div class="nav-hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')">
+            <span></span><span></span><span></span>
+        </div>
+        </div>
+    </nav>
+
+    <div class="container section">
+        <h1 style="margin-bottom: 24px; color: var(--brown-900);">Tizimdagi ustalar</h1>
+        
+        <div class="filter-bar">
+            <input type="text" id="searchQ" class="form-input" style="flex:1; min-width:200px;" placeholder="Kasb, mahorat bo'yicha qidiruv...">
+            <select id="sortS" class="form-input" style="width:160px;">
+                <option value="rating">Reyting bo'yicha</option>
+                <option value="baraka">Baraka bo'yicha</option>
+            </select>
+            <button class="btn btn-primary" onclick="loadMasters()">Izlash 🔍</button>
+            <button class="btn btn-outline" onclick="findNearby()"><span id="gpsBtnTxt">📍 Yaqinlar</span></button>
+        </div>
+
+        <div class="masters-grid" id="mastersGrid">
+            <div style="text-align:center; grid-column:1/-1;">Yuklanmoqda...</div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js?v=3"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', loadMasters);
+
+        async function loadMasters() {
+            const grid = document.getElementById('mastersGrid');
+            const q = document.getElementById('searchQ').value.trim();
+            const sort = document.getElementById('sortS').value;
+
+            try {
+                const res = await api.searchMasters(q, sort, null);
+                if (!res || res.length === 0) {
+                    grid.innerHTML = '<div style="text-align:center; grid-column:1/-1;">Ustalar topilmadi.</div>';
+                    return;
+                }
+
+                grid.innerHTML = res.map(m => `
+                    <div class="card master-card">
+                        <div class="mc-header">
+                            <div class="mc-avatar">
+                                ${m.avatar_url ? `<img src="${m.avatar_url}">` : '🧑‍🔧'}
+                            </div>
+                            <div>
+                                <h3 style="font-size:1.1rem;margin-bottom:4px;">${m.full_name}</h3>
+                                <span class="badge badge-green">⭐ Usta</span>
+                            </div>
+                        </div>
+                        <p style="color:var(--text-secondary); font-size:0.9rem; flex:1; margin-bottom:16px;">
+                            ${m.bio || 'Ma\'lumot kiritilmagan'}
+                        </p>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                            <div style="text-align:center;">
+                                <div style="font-weight:700; color:var(--gold-600);">${(m.halol_rating || 0).toFixed(1)}</div>
+                                <div style="font-size:0.75rem; color:var(--text-secondary);">Reyting</div>
+                            </div>
+                            <div style="text-align:center;">
+                                <div style="font-weight:700; color:var(--green-600);">${m.baraka_count || 0}</div>
+                                <div style="font-size:0.75rem; color:var(--text-secondary);">Baraka</div>
+                            </div>
+                            <div style="text-align:center;">
+                                <div style="font-weight:700;">${m.completed_orders || 0}</div>
+                                <div style="font-size:0.75rem; color:var(--text-secondary);">Buyurtma</div>
+                            </div>
+                        </div>
+                        <a href="/profile?id=${m.id}" class="btn btn-outline" style="text-align:center; width:100%;">Profilga o'tish</a>
+                    </div>
+                `).join('');
+            } catch(e) {
+                grid.innerHTML = '<div style="text-align:center; grid-column:1/-1; color:red;">Xatolik yuz berdi.</div>';
+            }
+        }
+        
+        async function findNearby() {
+            if(!navigator.geolocation) return alert("Brauzerda GPS yo'q");
+            document.getElementById('gpsBtnTxt').innerText = "Qidirilmoqda...";
+            navigator.geolocation.getCurrentPosition(async pos => {
+                try {
+                    const res = await api.getNearbyMasters(pos.coords.latitude, pos.coords.longitude, 50);
+                    const grid = document.getElementById('mastersGrid');
+                    document.getElementById('gpsBtnTxt').innerText = "📍 Yaqinlar";
+                    if (!res || res.length === 0) {
+                        grid.innerHTML = '<div style="text-align:center; grid-column:1/-1;">Yaqin atrofda ustalar topilmadi.</div>';
+                        return;
+                    }
+                    grid.innerHTML = res.map(m => `
+                        <div class="card master-card">
+                            <div class="mc-header">
+                                <div class="mc-avatar">🧑‍🔧</div>
+                                <div><h3 style="font-size:1.1rem;margin-bottom:4px;">${m.full_name}</h3><span class="badge badge-green">⭐ Usta</span></div>
+                            </div>
+                            <p style="color:var(--text-secondary); font-size:0.9rem; flex:1; margin-bottom:16px;">${m.bio || 'Ma\'lumot kiritilmagan'}</p>
+                            <a href="/profile?id=${m.id}" class="btn btn-outline" style="text-align:center; width:100%;">${m.distance_km} km masofada | Profil</a>
+                        </div>
+                    `).join('');
+                } catch(e) {
+                    document.getElementById('gpsBtnTxt').innerText = "Xato";
+                }
+            }, err => {
+                alert("GPS ruxsat berilmadi yoki xato");
+                document.getElementById('gpsBtnTxt').innerText = "📍 Yaqinlar";
+            });
+        }
+    </script>
+</body>
+</html>
