@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buyurtmalar — BARAKA</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="/" class="nav-logo"><div class="logo-icon">ب</div> BARAKA</a>
+            <ul class="nav-links" id="navLinks"></ul>
+        <div class="nav-hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')">
+            <span></span><span></span><span></span>
+        </div>
+        </div>
+    </nav>
+    <div class="container section">
+        <h1 style="color:var(--brown-900); margin-bottom:8px;">📋 Buyurtmalar</h1>
+        <div id="ordersList" style="display:flex; flex-direction:column; gap:16px;">Yuklanmoqda...</div>
+    </div>
+    <script src="/static/js/app.js?v=3"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = getAuthUser();
+            if(!user) return window.location.href='/login';
+            try {
+                const res = await api.getOrders();
+                const list = document.getElementById('ordersList');
+                if(!res || res.length===0){
+                    list.innerHTML = "Hali buyurtmalar yo'q.";
+                    return;
+                }
+                list.innerHTML = res.map(o => `
+                    <div class="card">
+                        <h3>Buyurtma #${o.id}</h3>
+                        <p>Holat: <span class="badge badge-green">${o.status}</span></p>
+                        <p>Matn: ${o.description}</p>
+                    </div>
+                `).join('');
+            } catch(e){
+                document.getElementById('ordersList').innerHTML = "Xatolik.";
+            }
+        });
+    </script>
+</body>
+</html>
