@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Usta profili — gildiya o'rni, nufuz, duolar, ishlar galereyasi.">
+    <title>Profil — BARAKA</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <!-- Leaflet JS for Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .gallery-item { position: relative; border-radius: var(--radius-md); overflow: hidden; aspect-ratio: 1; cursor: pointer; transition: all var(--transition); }
+        .gallery-item:hover { transform: scale(1.03); box-shadow: var(--shadow-lg); }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
+        .gallery-overlay { position: absolute; inset: 0; background: linear-gradient(transparent 50%, rgba(0,0,0,0.7)); opacity: 0; transition: opacity var(--transition); display: flex; align-items: flex-end; padding: 12px; }
+        .gallery-item:hover .gallery-overlay { opacity: 1; }
+        .gallery-overlay span { color: white; font-size: 0.85rem; font-weight: 500; }
+        .gallery-delete { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; border-radius: 50%; background: rgba(220, 38, 38, 0.85); color: white; border: none; cursor: pointer; font-size: 0.8rem; display: none; align-items: center; justify-content: center; z-index: 2; }
+        .gallery-item:hover .gallery-delete { display: flex; }
+        .upload-zone { border: 2px dashed var(--border-color); border-radius: var(--radius-md); padding: 32px; text-align: center; cursor: pointer; transition: all var(--transition); background: var(--gray-50); }
+        .upload-zone:hover, .upload-zone.dragover { border-color: var(--green-400); background: var(--green-50); }
+        .upload-zone input[type="file"] { display: none; }
+        .upload-icon { font-size: 2.5rem; margin-bottom: 8px; }
+        .upload-preview { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+        .upload-preview img { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 2px solid var(--green-300); }
+        .avatar-upload-wrap { position: relative; display: inline-block; }
+        .avatar-upload-btn { position: absolute; bottom: 4px; right: 4px; width: 36px; height: 36px; border-radius: 50%; background: var(--green-500); color: white; border: 3px solid white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; transition: all var(--transition); }
+        .avatar-upload-btn:hover { background: var(--green-600); transform: scale(1.1); }
+        .lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; align-items: center; justify-content: center; cursor: pointer; }
+        .lightbox.active { display: flex; }
+        .lightbox img { max-width: 90%; max-height: 90%; border-radius: var(--radius-md); box-shadow: 0 0 60px rgba(0,0,0,0.5); }
+        @media (max-width: 640px) { .gallery-grid { grid-template-columns: repeat(2, 1fr); } }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container">
+        <a href="/" class="nav-logo"><div class="logo-icon">ب</div> BARAKA</a>
+        <ul class="nav-links" id="navLinks"></ul>
+        <div class="nav-hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')">
+            <span></span><span></span><span></span>
+        </div>
+    </div>
+</nav>
+
+<section class="profile-header" id="profileHeader">
+    <div class="container">
+        <div class="avatar-upload-wrap">
+            <div class="profile-avatar" id="profileAvatar" style="width:120px;height:120px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:3rem;margin:0 auto;">🧑‍🔧</div>
+            <label class="avatar-upload-btn" title="Avatarni o'zgartirish">
+                📷<input type="file" accept="image/*" id="avatarInput" style="display:none;" onchange="uploadAvatar(this)">
+            </label>
+        </div>
+        <h1 class="profile-name" id="profileName" style="text-align:center;margin-top:16px;">Yuklanmoqda...</h1>
+        <div class="profile-rank" id="profileRank" style="text-align:center;margin-bottom:24px;color:var(--gold-600);font-weight:bold;">
+            <span>🌱</span> <span>—</span>
+        </div>
+        <div class="profile-stats" id="profileStats" style="display:flex;justify-content:center;gap:32px;flex-wrap:wrap;margin-top:16px;">
+            <div class="profile-stat" style="text-align:center;"><div class="profile-stat-value" id="pNufuz" style="font-size:1.5rem;font-weight:700;">0</div><div class="profile-stat-label" style="color:var(--text-secondary);font-size:0.85rem;">Nufuz</div></div>
+            <div class="profile-stat" style="text-align:center;" title="Mijozlar bergan Ajoyib/Yaxshi rizoliklar soni"><div class="profile-stat-value" id="pBaraka" style="color:var(--gold-600);font-size:1.5rem;font-weight:700;">0</div><div class="profile-stat-label" style="color:var(--text-secondary);font-size:0.85rem;">Baraka 🤲</div></div>
+            <div class="profile-stat" style="text-align:center;" title="To'g'ri va halol xizmatlar ko'rsatkichi"><div class="profile-stat-value" id="pHalol" style="color:var(--green-600);font-size:1.5rem;font-weight:700;">0.0</div><div class="profile-stat-label" style="color:var(--text-secondary);font-size:0.85rem;">Halol Reyting ⭐</div></div>
+            <div class="profile-stat" style="text-align:center;"><div class="profile-stat-value" id="pOrders" style="font-size:1.5rem;font-weight:700;">0</div><div class="profile-stat-label" style="color:var(--text-secondary);font-size:0.85rem;">Buyurtmalar</div></div>
+            <div class="profile-stat" style="text-align:center;"><div class="profile-stat-value" id="pShogird" style="font-size:1.5rem;font-weight:700;">0</div><div class="profile-stat-label" style="color:var(--text-secondary);font-size:0.85rem;">Shogirdlar</div></div>
+        </div>
+    </div>
+</section>
+
+<section class="section" style="padding-top:40px;">
+    <div class="container">
+        <div style="display:grid; grid-template-columns: 1fr 2fr; gap:32px;">
+            <!-- LEFT COLUMN: Bio + Duo + Mijoz Actions -->
+            <div style="display:flex; flex-direction:column; gap:24px;">
+                <div class="card fade-in">
+                    <h3 style="margin-bottom:16px;">📋 Ma'lumotlar</h3>
+                    <p id="profileBio" style="color:var(--text-secondary);">—</p>
+                    <div style="margin-top:16px; display:flex; gap:8px; flex-wrap:wrap;" id="profileBadges"></div>
+                </div>
+
+                <div class="card fade-in" id="mijozCard" style="display:none; text-align:center; padding:32px;">
+                    <div style="font-size:3rem; margin-bottom:16px;">🏛️</div>
+                    <h3 style="margin-bottom:12px; color:var(--brown-800);">Ishonchli Buyurtmachi</h3>
+                    <p style="color:var(--text-secondary); margin-bottom:24px;">Bu yerda o'z buyurtmalaringizni boshqarishingiz hamda yangi istʼdodli ustalarni kashf qilishingiz mumkin.</p>
+                    <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+                        <a href="/orders" class="btn btn-primary">📦 Mening buyurtmalarim</a>
+                        <a href="/masters" class="btn btn-outline">🔍 Usta izlash</a>
+                        <a href="/guilds" class="btn btn-outline" style="border-color:var(--brown-500); color:var(--brown-700);">🏛️ Kasabalar (Gildiya)</a>
+                        <a href="/shogird" class="btn btn-outline" style="border-color:var(--green-500); color:var(--green-700);">👥 Ustoz-Shogird</a>
+                    </div>
+                </div>
+
+                <div class="card fade-in" id="dokondorCard" style="display:none;">
+                    <h3 style="margin-bottom:16px;">🏪 Mening Do'konim</h3>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                        <span style="color:var(--text-secondary);">Mahsulot va xizmatlarni boshqaring</span>
+                        <button class="btn btn-primary btn-sm" onclick="document.getElementById('productForm').style.display='block'">+ Yangi Qo'shish</button>
+                    </div>
+                    
+                    <form id="productForm" style="display:none; background:var(--gray-50); padding:16px; border-radius:8px; margin-bottom:24px;" onsubmit="handleProductSubmit(event)">
+                        <h4 style="margin-bottom:12px;">Yangi mahsulot/xizmat</h4>
+                        <input type="text" name="name" placeholder="Nomi..." class="form-input" style="margin-bottom:8px;" required>
+                        <input type="text" name="description" placeholder="Batafsil ma'lumot..." class="form-input" style="margin-bottom:8px;" required>
+                        <input type="number" name="price" placeholder="Narxi (so'm)..." class="form-input" style="margin-bottom:8px;" required>
+                        <input type="text" name="image_url" placeholder="Rasm URL manzili..." class="form-input" style="margin-bottom:8px;">
+                        <input type="text" name="category" placeholder="Kategoriyasi..." class="form-input" style="margin-bottom:8px;">
+                        <div style="display:flex; gap:8px;">
+                            <button type="submit" class="btn btn-primary" style="flex:1;">Joylash</button>
+                            <button type="button" class="btn btn-outline" style="flex:1;" onclick="document.getElementById('productForm').style.display='none'">Bekor qilish</button>
+                        </div>
+                    </form>
+
+                    <div id="dokonProductsList" style="display:flex; flex-direction:column; gap:12px;"></div>
+                </div>
+
+                <div class="card fade-in" style="display:none;" id="certificatesCard">
+                    <h3 style="margin-bottom:16px;">🎓 Sertifikatlar</h3>
+                    <div id="certificatesList" style="display:flex; flex-direction:column; gap:12px;"></div>
+                </div>
+
+                <div class="card fade-in" style="margin-bottom:24px; display:none;" id="calendarCard">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                        <h3 style="display:flex; align-items:center;">📅 Ish jadvali</h3>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <button id="prevMonthBtn" onclick="changeMonth(-1)" class="btn btn-outline btn-sm">◄</button>
+                            <strong id="calendarMonth" style="min-width:100px; text-align:center;"></strong>
+                            <button id="nextMonthBtn" onclick="changeMonth(1)" class="btn btn-outline btn-sm">►</button>
+                        </div>
+                    </div>
+                    <div id="calendarGrid" style="display:grid; grid-template-columns:repeat(7, 1fr); gap:4px; text-align:center;"></div>
+                    <div id="calendarLegend" style="margin-top:12px; font-size:0.8rem; display:flex; gap:12px; justify-content:center; color:var(--text-secondary);">
+                        <span><div style="display:inline-block; width:12px; height:12px; background:var(--bg-color); border:1px solid #ccc; border-radius:3px;"></div> Bo'sh</span>
+                        <span><div style="display:inline-block; width:12px; height:12px; background:var(--red-100); border:1px solid var(--red-300); border-radius:3px;"></div> Band</span>
+                    </div>
+                </div>
+
+                <div class="card fade-in" style="margin-bottom:24px;" id="duoCard">
+                    <h3 style="margin-bottom:16px;">🤲 Duo qoldirish</h3>
+                    <p style="color:var(--text-secondary);margin-bottom:16px;font-size:0.9rem;">Ustaga ijobiy so'zlaringizni yozing</p>
+                    <div class="form-group">
+                        <textarea class="form-textarea" id="duoText" placeholder="Masalan: Juda oqlangan usta, ishi bilan baraka topsin..." rows="3"></textarea>
+                    </div>
+                    <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="sendDuo()">🤲 Duo yuborish</button>
+                </div>
+
+                <div class="card fade-in">
+                    <h3 style="margin-bottom:20px;">💬 Duolar</h3>
+                    <div id="duolarList">
+                        <p style="color:var(--text-secondary);text-align:center;padding:20px;">Yuklanmoqda...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: Gallery -->
+            <div>
+                <div class="card fade-in" id="galleryCard">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                        <h3>🖼️ Ishlar galereyasi</h3>
+                        <span class="badge badge-green" id="galleryCount">0 rasm</span>
+                    </div>
+
+                    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('galleryInput').click()">
+                        <div class="upload-icon">📸</div>
+                        <p style="font-weight:600;color:var(--brown-700);">Rasm yuklash</p>
+                        <p style="font-size:0.85rem;color:var(--text-secondary);">Bosing yoki rasmni bu yerga tashlang (max 5 MB)</p>
+                        <input type="file" id="galleryInput" accept="image/*" onchange="uploadGalleryItem(this)">
+                    </div>
+                    <div class="upload-preview" id="uploadPreview"></div>
+
+                    <div class="gallery-grid" id="galleryGrid" style="margin-top:20px;"></div>
+                </div>
+
+                <div class="card fade-in" id="mapCard" style="display:none; border-top:4px solid var(--brown-700); margin-top:24px;">
+                    <h3 style="color:var(--brown-900); margin-bottom:8px;" id="mapCardTitle">📍 Mening joylashuvim</h3>
+                    <p style="font-size:0.9rem; color:var(--text-secondary); margin-bottom:16px;" id="mapCardDesc">Xaritadan manzilingizni belgilang.</p>
+                    <div id="shopAddressGroup" style="display:none; margin-bottom:16px;">
+                        <label class="form-label">Do'kon manzili (matn)</label>
+                        <input type="text" id="shopAddressInput" class="form-input" placeholder="Masalan: Chilonzor-2, Furnitura bozori">
+                    </div>
+                    <div id="map" style="height: 300px; width: 100%; border-radius: 8px; margin-bottom:16px; background:var(--gray-200); z-index:1;"></div>
+                    <div style="display:flex; justify-content:flex-end;">
+                        <button class="btn btn-primary" id="saveLocationBtn" style="display:none;" onclick="saveLocation()">Joyloshuvni saqlash</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="lightbox" id="lightbox" onclick="this.classList.remove('active')">
+    <img id="lightboxImg" src="" alt="">
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-bottom">© 2026 BARAKA. Barcha huquqlar himoyalangan.</div>
+    </div>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/static/js/app.js?v=3"></script>
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const userId = urlParams.get('id');
+
+let me = null;
+let profileUser = null;
+let map = null;
+let marker = null;
+let currentLat = null;
+let currentLng = null;
+
+let currentDate = new Date();
+let currentYear = currentDate.getFullYear();
+let currentMonth = currentDate.getMonth() + 1; // 1-12
+
+document.addEventListener('DOMContentLoaded', async () => {
+    me = getAuthUser();
+
+    if (!userId) {
+        document.getElementById('profileName').textContent = 'Foydalanuvchi topilmadi';
+        return;
+    }
+
+    try {
+        const [profile, stats] = await Promise.all([
+            api.getMasterProfile(userId),
+            api.getMasterStats(userId),
+        ]);
+
+        profileUser = profile.user;
+        const user = profileUser;
+        document.title = `${user.full_name} — BARAKA`;
+        document.getElementById('profileName').textContent = user.full_name;
+        document.getElementById('profileBio').textContent = user.bio || 'Ma\'lumot kiritilmagan';
+
+        if (user.avatar_url) {
+            const av = document.getElementById('profileAvatar');
+            av.innerHTML = `<img src="${user.avatar_url}" alt="${user.full_name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+        }
+
+        const rank = profile.guild?.rank || 'Yangi';
+        const nufuz = profile.guild?.nufuz || 0;
+        
+        // Hide sensitive features based on relationship
+        if (!me || me.id !== Number(userId)) {
+            document.getElementById('uploadZone').style.display = 'none';
+            const avBtn = document.querySelector('.avatar-upload-btn');
+            if (avBtn) avBtn.style.display = 'none';
+        }
+
+        if (user.role === 'MIJOZ') {
+            document.getElementById('profileStats').style.display = 'none';
+            document.getElementById('profileRank').style.display = 'none';
+            document.getElementById('galleryCard').style.display = 'none';
+            document.getElementById('mapCard').style.display = 'none';
+            document.getElementById('duoCard').style.display = 'none'; 
+            document.getElementById('duolarList').parentElement.style.display = 'none';
+            document.getElementById('profileBadges').innerHTML = `<span class="badge badge-secondary">👤 Ushbu foydalanuvchi tizim mijozi</span>`;
+            
+            if (me && me.id === Number(userId)) {
+                document.getElementById('mijozCard').style.display = 'block';
+            }
+        } else if (user.role === 'DOKONDOR') {
+            document.getElementById('profileStats').style.display = 'none';
+            document.getElementById('profileRank').style.display = 'none';
+            document.getElementById('galleryCard').style.display = 'none';
+            document.getElementById('mapCard').style.display = 'none';
+            document.getElementById('duoCard').style.display = 'none'; 
+            document.getElementById('duolarList').parentElement.style.display = 'none';
+            document.getElementById('profileBadges').innerHTML = `<span class="badge badge-secondary">🏪 Do'kon Egasi</span>`;
+            
+            if (me && me.id === Number(userId)) {
+                document.getElementById('dokondorCard').style.display = 'block';
+                loadMyProducts();
+            }
+        } else {
+            // Stats
+            document.getElementById('pNufuz').textContent = nufuz.toFixed(1);
+            document.getElementById('pBaraka').textContent = user.baraka_count || 0;
+            document.getElementById('pHalol').textContent = (user.halol_rating || 0).toFixed(1);
+            document.getElementById('pOrders').textContent = stats.completed_orders || 0;
+            document.getElementById('pShogird').textContent = profile.shogirdlar_soni || 0;
+            document.getElementById('profileRank').innerHTML = `<span>🏆</span> <span>${rank}</span>`;
+
+            if (user.role === 'USTA' || user.role === 'DOKONDOR') {
+                document.getElementById('mapCard').style.display = 'block';
+                initMap(user);
+            }
+            if (user.role === 'USTA') {
+                document.getElementById('calendarCard').style.display = 'block';
+                await loadCalendar();
+            }
+
+            document.getElementById('profileBadges').innerHTML = `
+                <span class="badge badge-green">${rank}</span>
+                <span class="badge badge-gold">⭐ Nufuz: ${nufuz.toFixed(1)}</span>
+                <span class="badge badge-brown">📦 ${stats.total_orders || 0} buyurtma</span>
+                ${user.bagrikenglik_requests > 0 ? `<span class="badge badge-secondary">💚 ${user.bagrikenglik_requests} Bag'rikenglik</span>` : ''}
+            `;
+            loadGallery();
+        }
+
+        renderDuolar(profile.duolar || []);
+
+    } catch(e) {
+        document.getElementById('profileName').textContent = 'Ma`lumot topilmadi';
+        console.error(e);
+    }
+});
+
+function initMap(user) {
+    const isMe = (me && me.id == user.id);
+    const hasLoc = user.lat && user.lng;
+    
+    // Default Tashkent
+    const center = hasLoc ? [user.lat, user.lng] : [41.2995, 69.2401];
+    const zoom = hasLoc ? 14 : 11;
+    
+    map = L.map('map').setView(center, zoom);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+    if (hasLoc) {
+        marker = L.marker([user.lat, user.lng]).addTo(map);
+        currentLat = user.lat;
+        currentLng = user.lng;
+    }
+
+    if (isMe) {
+        map.on('click', function(e) {
+            currentLat = e.latlng.lat;
+            currentLng = e.latlng.lng;
+            if (marker) {
+                marker.setLatLng(e.latlng);
+            } else {
+                marker = L.marker(e.latlng).addTo(map);
+            }
+            document.getElementById('saveLocationBtn').style.display = 'inline-flex';
+        });
+        if(user.role === 'DOKONDOR'){
+            document.getElementById('shopAddressGroup').style.display = 'block';
+            if(user.shop_address) document.getElementById('shopAddressInput').value = user.shop_address;
+        }
+    } else {
+        document.getElementById('mapCardDesc').textContent = 'Ushbu foydalanuvchi joylashgan yerdagi xarita ko`rsatkichi.';
+    }
+}
+
+async function saveLocation() {
+    if (!currentLat || !currentLng) return;
+    const updateData = { lat: currentLat, lng: currentLng };
+    const shopInput = document.getElementById('shopAddressInput');
+    if (shopInput && shopInput.value.trim()) {
+        updateData.shop_address = shopInput.value.trim();
+    }
+    try {
+        await api.updateMyProfile(updateData);
+        showToast('Manzilingiz xaritada saqlandi! 📍');
+        document.getElementById('saveLocationBtn').style.display = 'none';
+        const user = getAuthUser();
+        if (user) {
+            user.lat = currentLat; user.lng = currentLng;
+            if (updateData.shop_address) user.shop_address = updateData.shop_address;
+            localStorage.setItem('baraka_user', JSON.stringify(user));
+        }
+    } catch(err) {
+        showToast(err.message, 'error');
+    }
+}
+
+function renderDuolar(duolar) {
+    const list = document.getElementById('duolarList');
+    if (!duolar || duolar.length === 0) {
+        list.innerHTML = `<p style="color:var(--text-secondary);text-align:center;padding:20px;">Hali duo berilmagan 🤲</p>`;
+        return;
+    }
+    list.innerHTML = duolar.map(d => `
+        <div style="padding:14px 0;border-bottom:1px solid var(--gray-100);display:flex;gap:12px;align-items:flex-start;">
+            <div style="width:36px;height:36px;border-radius:50%;background:var(--green-100);display:flex;align-items:center;justify-content:center;flex-shrink:0;">🤲</div>
+            <div>
+                <p style="font-size:0.95rem;line-height:1.5;">${d.text}</p>
+                <span style="font-size:0.78rem;color:var(--text-secondary);">${new Date(d.created_at).toLocaleString('uz-UZ')}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function sendDuo() {
+    if (!me) { showToast('Duo qoldirish uchun tizimga kiring', 'error'); return; }
+    const text = document.getElementById('duoText').value.trim();
+    if (!text) { showToast('Duo matnini yozing', 'error'); return; }
+    try {
+        await api.createDuo({ author_id: me.id, target_user_id: parseInt(userId), text });
+        showToast('Duo muvaffaqiyatli yuborildi! 🤲');
+        document.getElementById('duoText').value = '';
+        setTimeout(() => location.reload(), 1000);
+    } catch(e) {}
+}
+
+async function loadGallery() {
+    const grid = document.getElementById('galleryGrid');
+    const count = document.getElementById('galleryCount');
+    try {
+        const items = await fetch(`/api/v1/gallery/user/${userId}`).then(res => res.json());
+        count.textContent = `${items.length} rasm`;
+        if (items.length === 0) {
+            grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--text-secondary);"><div style="font-size:2rem;margin-bottom:8px;">🖼️</div><p>Hali rasm yuklanmagan</p></div>`;
+            return;
+        }
+        grid.innerHTML = items.map(item => `
+            <div class="gallery-item" onclick="openLightbox('${item.image_url}')">
+                <img src="${item.image_url}" alt="${item.title || 'Ish namunasi'}" loading="lazy">
+                <div class="gallery-overlay"><span>${item.title || ''}</span></div>
+                ${me && me.id == userId ? `<button class="gallery-delete" onclick="event.stopPropagation();deleteGalleryItem(${item.id})" title="O'chirish">✕</button>` : ''}
+            </div>
+        `).join('');
+    } catch(e) {
+        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:red;">Xatolik</div>`;
+    }
+}
+
+async function uploadGalleryItem(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const preview = document.getElementById('uploadPreview');
+    const reader = new FileReader();
+    reader.onload = (e) => { preview.innerHTML = `<img src="${e.target.result}" alt="preview">`; };
+    reader.readAsDataURL(file);
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('user_id', userId);
+    formData.append('title', file.name.split('.')[0]);
+
+    try {
+        const res = await fetch('/api/v1/gallery/', { method: 'POST', body: formData });
+        if (!res.ok) throw new Error('Yuklashda xatolik');
+        showToast('Rasm muvaffaqiyatli yuklandi! 🖼️');
+        preview.innerHTML = '';
+        input.value = '';
+        loadGallery();
+    } catch(e) {
+        showToast('Rasm yuklashda xatolik', 'error');
+    }
+}
+
+async function uploadAvatar(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+        const res = await fetch(`/api/v1/users/${userId}/avatar`, { method: 'POST', body: formData });
+        if (!res.ok) throw new Error('Yuklashda xatolik');
+        showToast('Avatar yangilandi! 📸');
+        setTimeout(() => location.reload(), 800);
+    } catch(e) {
+        showToast('Avatar yuklashda xatolik', 'error');
+    }
+}
+
+async function deleteGalleryItem(itemId) {
+    if (!confirm('Bu rasmni o\'chirmoqchimisiz?')) return;
+    try {
+        const res = await fetch(`/api/v1/gallery/${itemId}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('O\'chirish xatosi');
+        showToast('Rasm o\'chirildi');
+        loadGallery();
+    } catch(e) { showToast('Xatolik', 'error'); }
+}
+
+function openLightbox(src) {
+    document.getElementById('lightboxImg').src = src;
+    document.getElementById('lightbox').classList.add('active');
+}
+
+// Minimal calendar helper implementation 
+async function loadCalendar() {
+    const monthNames = ["", "Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"];
+    document.getElementById('calendarMonth').innerText = `${monthNames[currentMonth]} ${currentYear}`;
+    
+    try {
+        const slots = await api.getSchedule(userId, currentMonth, currentYear);
+        const busyMap = {};
+        slots.forEach(s => busyMap[s.date] = s);
+        
+        let html = '';
+        let daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+        for(let i=1; i<=daysInMonth; i++) {
+            const dateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+            const isBusy = busyMap[dateStr] ? true : false;
+            let bg = isBusy ? 'var(--red-100)' : 'var(--bg-color)';
+            let border = isBusy ? 'var(--red-300)' : '#e2e8f0';
+            html += `<div style="padding:8px; border:1px solid ${border}; background:${bg}; border-radius:4px; font-size:0.9rem;" title="${isBusy ? 'Band':'Bo`sh'}">
+                ${i}
+            </div>`;
+        }
+        document.getElementById('calendarGrid').innerHTML = html;
+    } catch(err){
+        console.error(err);
+    }
+}
+function changeMonth(delta) {
+    currentMonth += delta;
+    if(currentMonth < 1) { currentMonth = 12; currentYear--; }
+    if(currentMonth > 12) { currentMonth = 1; currentYear++; }
+    loadCalendar();
+}
+</script>
+</body>
+</html>
