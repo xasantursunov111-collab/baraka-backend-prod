@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mening Dashboardim — BARAKA</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="/" class="nav-logo"><div class="logo-icon">ب</div> BARAKA</a>
+            <ul class="nav-links" id="navLinks"></ul>
+        <div class="nav-hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')">
+            <span></span><span></span><span></span>
+        </div>
+        </div>
+    </nav>
+    <div class="container section">
+        <h1 style="color:var(--brown-900); margin-bottom:8px;">📊 Mening Dashboardim</h1>
+        <p style="color:var(--text-secondary); margin-bottom: 24px;">Shaxsiy statistikangiz va ma'lumotlaringiz tahlili.</p>
+        
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:24px; margin-bottom: 32px;" id="dStatsGrid">
+            Yuklanmoqda...
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/static/js/app.js?v=3"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = getAuthUser();
+            if(!user) return window.location.href = '/login';
+            
+            try {
+                const stats = await api.getDashboard();
+                const grid = document.getElementById('dStatsGrid');
+                grid.innerHTML = `
+                    <div class="card" style="text-align:center;">
+                        <h3 style="font-size:2rem; color:var(--brown-700);">${stats.orders.completed_orders || 0}</h3>
+                        <p style="color:var(--text-secondary);">Tugallangan Buyurtmalar</p>
+                    </div>
+                    <div class="card" style="text-align:center;">
+                        <h3 style="font-size:2rem; color:var(--green-600);">${stats.orders.total_income || 0} UZS</h3>
+                        <p style="color:var(--text-secondary);">Umumiy Daromad</p>
+                    </div>
+                    <div class="card" style="text-align:center;">
+                        <h3 style="font-size:2rem; color:var(--gold-600);">${(stats.user.halol_rating || 0).toFixed(1)}</h3>
+                        <p style="color:var(--text-secondary);">Halol Reyting</p>
+                    </div>
+                `;
+            } catch(e) {
+                document.getElementById('dStatsGrid').innerHTML = '<div style="color:red;">Statistika yuklashda xatolik!</div>';
+            }
+        });
+    </script>
+</body>
+</html>
