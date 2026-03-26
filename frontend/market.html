@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xom-ashyo Bozori — BARAKA</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="/" class="nav-logo"><div class="logo-icon">ب</div> BARAKA</a>
+            <ul class="nav-links" id="navLinks"></ul>
+        <div class="nav-hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')">
+            <span></span><span></span><span></span>
+        </div>
+        </div>
+    </nav>
+    <div class="container section">
+        <h1 style="color:var(--brown-900); margin-bottom:8px;">📦 Umumiy Bozor</h1>
+        <p style="color:var(--text-secondary); margin-bottom: 24px;">Asbob-uskunalar va mahsulotlar e'lonlari.</p>
+
+        <div id="marketList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:24px;">
+            <div style="grid-column:1/-1;">Yuklanmoqda...</div>
+        </div>
+    </div>
+    
+    <script src="/static/js/app.js?v=3"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const list = document.getElementById('marketList');
+            try {
+                const prods = await api.getMaterials();
+                if(!prods || prods.length === 0){
+                    list.innerHTML = "Sotuvda tovarlar qolmagan."; return;
+                }
+                list.innerHTML = prods.map(p => `
+                    <div class="card" style="display:flex; flex-direction:column; gap:8px;">
+                        <div style="height:120px; background:var(--gray-200); border-radius:8px;"></div>
+                        <h3 style="font-size:1.2rem;">${p.name}</h3>
+                        <p style="color:var(--text-secondary); font-size:0.9rem;">${p.description}</p>
+                        <div style="color:var(--green-600); font-weight:bold; margin-top:auto;">${p.price}</div>
+                        <button class="btn btn-outline">Harid qilish</button>
+                    </div>
+                `).join('');
+            } catch(e) { list.innerHTML = "Xatolik ro'y berdi."; }
+        });
+    </script>
+</body>
+</html>
