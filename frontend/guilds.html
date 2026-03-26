@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kasabalar (Gildiya) — BARAKA</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="/" class="nav-logo"><div class="logo-icon">ب</div> BARAKA</a>
+            <ul class="nav-links" id="navLinks"></ul>
+        <div class="nav-hamburger" onclick="document.getElementById('navLinks').classList.toggle('open')">
+            <span></span><span></span><span></span>
+        </div>
+        </div>
+    </nav>
+    <div class="container section">
+        <h1 style="color:var(--brown-900); margin-bottom:8px;">🛡️ Ustalar Kasabalari</h1>
+        <p style="color:var(--text-secondary); margin-bottom: 24px;">Xavfsizlik va taraqqiyotni ta'minlovchi gildiyalar tizimi.</p>
+
+        <div id="guildsList" style="display:grid; grid-template-columns: 1fr; gap:24px;">
+            Yuklanmoqda...
+        </div>
+    </div>
+    
+    <script src="/static/js/app.js?v=3"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const list = document.getElementById('guildsList');
+            try {
+                const guilds = await api.getGuilds();
+                if(!guilds || guilds.length === 0){
+                    list.innerHTML = "Hozircha kasabalar mavjud emas."; return;
+                }
+                list.innerHTML = guilds.map(g => `
+                    <div class="card" style="display:flex; flex-direction:column; gap:8px;">
+                        <h3 style="font-size:1.4rem;">${g.name}</h3>
+                        <p style="color:var(--text-secondary);">${g.description}</p>
+                        <div style="margin-top:8px;"><strong>Fondi:</strong> <span style="color:var(--gold-600);">${g.bank_balance} UZS</span></div>
+                        <button class="btn btn-outline" style="align-self:flex-start; margin-top:12px;">Kasabaga a'zo bo'lish</button>
+                    </div>
+                `).join('');
+            } catch(e) { list.innerHTML = "Xatolik ro'y berdi."; }
+        });
+    </script>
+</body>
+</html>
