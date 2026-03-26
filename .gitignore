@@ -1,0 +1,15 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+.env
+baraka.db
+uploads/
+.gemini/
+.pytest_cache/
+.vscode/
+.idea/
+*.log
+node_modules/
+dist/
+build/
