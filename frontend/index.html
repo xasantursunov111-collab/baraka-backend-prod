@@ -247,15 +247,46 @@
         const maxLen = 3000;
         if(text.length > maxLen) text = text.substring(0, maxLen);
         
-        text = text.replace(/0 ta/g, "ohta").replace(/0/g, "nol").replace(/\*/g, "");
+        // Markdown belgilarini tozalash
+        text = text.replace(/\*/g, "").replace(/#/g, "").replace(/\n/g, ". ");
         
+        // 1-usul: Brauzerning Speech Synthesis API (tezkor, internet kerak emas)
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel(); // Oldingi gapni to'xtatish
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'uz-UZ';
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+            
+            // O'zbek tili ovozini qidirish, bo'lmasa ruscha yoki boshqa
+            const voices = window.speechSynthesis.getVoices();
+            const uzVoice = voices.find(v => v.lang.startsWith('uz'));
+            const ruVoice = voices.find(v => v.lang.startsWith('ru'));
+            if (uzVoice) utterance.voice = uzVoice;
+            else if (ruVoice) { utterance.voice = ruVoice; utterance.lang = 'ru-RU'; }
+            
+            utterance.onstart = () => { isThinking = true; };
+            utterance.onend = () => {
+                isThinking = false;
+                if(isVoiceMode && recognition) recognition.start();
+            };
+            utterance.onerror = () => {
+                isThinking = false;
+                if(isVoiceMode && recognition) recognition.start();
+            };
+            
+            window.speechSynthesis.speak(utterance);
+            return;
+        }
+        
+        // 2-usul: Server TTS (fallback)
+        text = text.replace(/0 ta/g, "ohta").replace(/0/g, "nol");
         const encoded = encodeURIComponent(text);
         const au = new Audio(`/api/v1/tts?text=${encoded}&voice=uz-UZ-SardorNeural`);
         
         au.onplay = () => { isThinking = true; };
         au.onended = () => {
             isThinking = false;
-            document.getElementById('smartSearchResults').innerHTML = '';
             if(isVoiceMode && recognition) recognition.start();
         };
         au.onerror = () => {
