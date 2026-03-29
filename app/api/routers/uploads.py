@@ -12,8 +12,12 @@ from app.models.gallery import GalleryItem
 router = APIRouter()
 
 # Rasmlar saqlanadigan papka
-UPLOAD_DIR = Path(__file__).resolve().parent.parent.parent.parent / "uploads"
-UPLOAD_DIR.mkdir(exist_ok=True)
+if os.environ.get("VERCEL"):
+    UPLOAD_DIR = Path("/tmp/uploads")
+else:
+    UPLOAD_DIR = Path(__file__).resolve().parent.parent.parent.parent / "uploads"
+
+UPLOAD_DIR.mkdir(exist_ok=True, parents=True)
 
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
