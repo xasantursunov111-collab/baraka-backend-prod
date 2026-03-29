@@ -493,23 +493,27 @@ def ai_chat_endpoint(
 async def synthesize_speech(text: str):
     """
     Microsoft Edge Neural TTS yordamida haqiqiy inson kabi gapiruvchi audio generatsiya qiladi.
-    Audio to'g'ridan to'g'ri MP3 formatida stream qilinadi.
+    Audio MP3 formatida qaytariladi.
     """
     try:
-        # SardorNeural is a very natural and fluent Uzbek male voice
         text = text.replace("0 ta", "nol ta").replace(" 0 ", " nol ").replace("0", "nol")
         
+        # Collect all audio chunks into memory (Vercel serverless doesn't support true streaming)
         communicate = edge_tts.Communicate(text, "uz-UZ-SardorNeural")
+        audio_data = b""
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                audio_data += chunk["data"]
         
-        async def audio_stream():
-            async for chunk in communicate.stream():
-                if chunk["type"] == "audio":
-                    yield chunk["data"]
-                    
-        return StreamingResponse(audio_stream(), media_type="audio/mpeg")
+        if not audio_data:
+            raise HTTPException(status_code=500, detail="Audio generatsiya qilinmadi")
+        
+        from fastapi.responses import Response
+        return Response(content=audio_data, media_type="audio/mpeg")
     except Exception as e:
         print("TTS Error:", e)
-        raise HTTPException(status_code=500, detail="Qisman ovozli xatolik yuz berdi")
+        raise HTTPException(status_code=500, detail="Ovozli xatolik yuz berdi")
+
 
 
 # ==================== YAQIN USTALAR (GEO) ====================
