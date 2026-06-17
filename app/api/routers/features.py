@@ -106,7 +106,7 @@ def get_dashboard(
         completed = db.query(func.count(Order.id)).filter(
             and_(Order.master_id == user_id, Order.status == "YAKUNLANDI")
         ).scalar() or 0
-        total_earnings = db.query(func.sum(Order.amount)).filter(
+        total_earnings = db.query(func.sum(Order.price)).filter(
             and_(Order.master_id == user_id, Order.status == "YAKUNLANDI")
         ).scalar() or 0
         stats["orders"] = {"total": total_orders, "completed": completed}

@@ -18,3 +18,5 @@ itsdangerous==2.2.0
 cryptography==44.0.1
 aiofiles==24.1.0
 psycopg2-binary==2.9.10
+bcrypt==4.2.1
+pyngrok==7.2.2

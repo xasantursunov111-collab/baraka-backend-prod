@@ -34,6 +34,16 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# --------- CORS Middleware ---------
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # --------- Admin Panel ---------
 authentication_backend = AdminAuth(secret_key=os.getenv("SECRET_KEY", "my-super-secret-key-123!"))
 admin = Admin(app, engine, authentication_backend=authentication_backend)

@@ -255,7 +255,7 @@ def request_sos(order_id: int, db: Session = Depends(get_db), current_user: User
 # ELEKTRON SMETA (ESTIMATE) ROUTES
 # ==========================================
 
-@router.post("/{order_id}/estimate", response_model=EstimateOut, status_code=status.HTTP_201_CREATED)
+@router.post("/orders/{order_id}/estimate", response_model=EstimateOut, status_code=status.HTTP_201_CREATED)
 def create_estimate(
     order_id: int,
     estimate_in: EstimateCreate,
@@ -272,7 +272,7 @@ def create_estimate(
     if order.master_id != current_user.id:
         raise HTTPException(status_code=403, detail="Faqat buyurtmani olgan usta smeta yuborishi mumkin")
     
-    if order.status != OrderStatus.QABUL_QILINGAN:
+    if order.status != OrderStatus.QABUL_QILINDI:
         raise HTTPException(status_code=400, detail="Smetani faqat qabul qilingan buyurtmaga yuborish mumkin")
     
     if order.estimate:
@@ -299,7 +299,7 @@ def create_estimate(
     return estimate
 
 
-@router.put("/{order_id}/estimate/accept", response_model=OrderOut)
+@router.put("/orders/{order_id}/estimate/accept", response_model=OrderOut)
 def accept_estimate(
     order_id: int,
     db: Session = Depends(get_db),

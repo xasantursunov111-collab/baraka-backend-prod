@@ -9,7 +9,7 @@ class Settings(BaseSettings):
         _db_url = _db_url.replace("postgres://", "postgresql://", 1)
     
     SQLALCHEMY_DATABASE_URI: str = _db_url
-    SECRET_KEY: str = "SUPER_SECRET_KEY_FOR_BARAKA_DEVELOPMENT"  # In production, use a secure secret
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "SUPER_SECRET_KEY_FOR_BARAKA_DEVELOPMENT")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
 

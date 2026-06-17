@@ -100,6 +100,8 @@ def update_my_profile(
         current_user.lat = update_data.lat
     if update_data.lng is not None:
         current_user.lng = update_data.lng
+    if update_data.shop_address is not None:
+        current_user.shop_address = update_data.shop_address
 
     db.commit()
     db.refresh(current_user)
